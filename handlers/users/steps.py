@@ -53,7 +53,7 @@ async def choose_type(message: types.Message, state: FSMContext):
     number = message.text
     # сохраняем номер техники в контекст
     await state.update_data(number=number)
-    await message.answer("⚙️Выберите ремонт для Бульдозера:", reply_markup=keyboard)
+    await message.answer(f"⚙️Выберите ремонт для {tech}:", reply_markup=keyboard)
 
     # далее не нужен FSM, так как будет использоваться callback.
     await state.reset_state(with_data=False)
