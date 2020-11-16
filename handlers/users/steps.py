@@ -1,8 +1,9 @@
 from aiogram import types
 from aiogram.dispatcher import FSMContext
+from aiogram.types import InlineKeyboardMarkup
 
 from data.steps_data import bull_remont_types, exc_remont_types
-from handlers.users.start import cq_start
+from handlers.users.start import cq_start, start
 from keyboards.default.keyboards import done_button
 from keyboards.inline.keyboards import bulldozer_num, excavator_num, exc_remont_list, bull_remont_list, back_button
 from loader import dp, bot
@@ -12,40 +13,50 @@ from states.user_state import UserStep
 @dp.callback_query_handler(text="bulldozers")
 async def bulldozers(call: types.CallbackQuery, state: FSMContext):
     await state.update_data(tech="Бульдозер")
-    await call.message.answer("✅ Выберите номер техники <i>Бульдозер</i>:", reply_markup=bulldozer_num)
+    await call.message.answer("✅ Введите номер техники для <i>Бульдозера</i>:", reply_markup=back_button("start"))
+    await UserStep.tech_number.set()
 
 
 @dp.callback_query_handler(text="excavator")
 async def excavator(call: types.CallbackQuery, state: FSMContext):
     await state.update_data(tech="Эксковатор")
-    await call.message.answer("✅ Веберите номер техники <i>Эксковаторы</i>:", reply_markup=excavator_num)
+    await call.message.answer("✅ Введите номер техники для <i>Эксковатора</i>:", reply_markup=back_button("start"))
+    await UserStep.tech_number.set()
 
 
-@dp.callback_query_handler(text_contains="bull:", state='*')
-async def bull_type(call: types.CallbackQuery, state: FSMContext):
+@dp.message_handler(state=UserStep.tech_number)
+async def choose_type(message: types.Message, state: FSMContext):
+    """
+    Обработка введенного вручную номера техники и отправка сообщения с выбором ремонта.
+    """
+    # Получаем номер техники
     tech = (await state.get_data()).get('tech')
-    if tech is None or tech != "Бульдозер":
+    if tech is None:
+        # Если не получилось, то возвращаем в начальное меню
         await state.reset_state(with_data=True)
-        await cq_start(call)
+        await start(message)
         return
-    await state.reset_state(with_data=False)
-    number = call.data.split(":")[1]
-    await state.update_data(number=number)
-    await call.message.answer("⚙️Выберите ремонт для Бульдозера:", reply_markup=bull_remont_list)
-
-
-@dp.callback_query_handler(text_contains="exc:", state='*')
-async def exc_type(call: types.CallbackQuery, state: FSMContext):
-    tech = (await state.get_data()).get('tech')
-    if tech is None or tech != "Эксковатор":
+    # клавиатура, которая будет показывать список ремонтов
+    keyboard = InlineKeyboardMarkup()
+    if tech == "Бульдозер":
+        # Если техника бульдозер, то клавиатура ремонтов для бульдозера
+        keyboard = bull_remont_list
+    elif tech == "Эксковатор":
+        # Если техника Эксковатор, то клавиатура ремнотов для эксковатора
+        keyboard = exc_remont_list
+    else:
+        # Если не то и не другое, то случилась ошибка ввода данных, возвращем в главное меню
         await state.reset_state(with_data=True)
-        await cq_start(call)
+        await start(message)
         return
 
-    await state.reset_state(with_data=False)
-    number = call.data.split(":")[1]
+    number = message.text
+    # сохраняем номер техники в контекст
     await state.update_data(number=number)
-    await call.message.answer("⚙️Выберите ремонт для Эксковатора:", reply_markup=exc_remont_list)
+    await message.answer("⚙️Выберите ремонт для Бульдозера:", reply_markup=keyboard)
+
+    # далее не нужен FSM, так как будет использоваться callback.
+    await state.reset_state(with_data=False)
 
 
 @dp.callback_query_handler(text_contains="bull_remont")
