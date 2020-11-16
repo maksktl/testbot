@@ -62,7 +62,7 @@ async def choose_type(message: types.Message, state: FSMContext):
 @dp.callback_query_handler(text_contains="bull_remont")
 async def bull_remont(call: types.CallbackQuery, state: FSMContext):
     data = await state.get_data()
-    if data.get('tech') is None or data.get('tech') != "Бульдозер" or data.get('number')[0] != 'Б':
+    if data.get('tech') is None or data.get('tech') != "Бульдозер":
         await state.reset_state(with_data=True)
         await cq_start(call)
         return
@@ -76,7 +76,7 @@ async def bull_remont(call: types.CallbackQuery, state: FSMContext):
 @dp.callback_query_handler(text_contains="exc_remont")
 async def exc_remont(call: types.CallbackQuery, state: FSMContext):
     data = await state.get_data()
-    if data.get('tech') is None or data.get('tech') != "Эксковатор" or data.get('number')[0] != 'Э':
+    if data.get('tech') is None or data.get('tech') != "Эксковатор":
         await state.reset_state(with_data=True)
         await cq_start(call)
         return
